@@ -27,15 +27,39 @@ const userStyle = {
   marginBottom: "10px",
 };
 
-const agentStyle = {
+const answerContainer = {
+  marginBottom: "10px",
+};
+
+const answerLabel = {
+  fontSize: "12px",
+  fontWeight: "bold",
+  color: "#666",
+  marginBottom: "5px",
+};
+
+const ragAnswerStyle = {
   maxWidth: "50%",
   textAlign: "left",
-  backgroundColor: "#F9F9FE",
+  backgroundColor: "#E6F7FF",
   color: "black",
   display: "inline-block",
   borderRadius: "10px",
   padding: "10px",
-  marginBottom: "10px",
+  marginBottom: "5px",
+  borderLeft: "4px solid #1890FF",
+};
+
+const mcpAnswerStyle = {
+  maxWidth: "50%",
+  textAlign: "left",
+  backgroundColor: "#F6FFED",
+  color: "black",
+  display: "inline-block",
+  borderRadius: "10px",
+  padding: "10px",
+  marginBottom: "5px",
+  borderLeft: "4px solid #52C41A",
 };
 
 const RenderQA = (props) => {
@@ -50,7 +74,16 @@ const RenderQA = (props) => {
               <div style={userStyle}>{each.question}</div>
             </div>
             <div style={agentContainer}>
-              <div style={agentStyle}>{each.answer}</div>
+              <div>
+                <div style={answerContainer}>
+                  <div style={answerLabel}>RAG Answer (from document):</div>
+                  <div style={ragAnswerStyle}>{each.answer.ragAnswer}</div>
+                </div>
+                <div style={answerContainer}>
+                  <div style={answerLabel}>MCP Answer (with web search):</div>
+                  <div style={mcpAnswerStyle}>{each.answer.mcpAnswer}</div>
+                </div>
+              </div>
             </div>
           </div>
         );

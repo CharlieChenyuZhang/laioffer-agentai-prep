@@ -25,13 +25,7 @@ const ChatComponent = (props) => {
   const [speech, setSpeech] = useState();
 
   // speech recognation
-  const {
-    transcript,
-    listening,
-    resetTranscript,
-    browserSupportsSpeechRecognition,
-    isMicrophoneAvailable,
-  } = useSpeechRecognition();
+  const { transcript, listening, resetTranscript } = useSpeechRecognition();
 
   useEffect(() => {
     const speech = new Speech();
@@ -129,9 +123,10 @@ const ChatComponent = (props) => {
           question,
         },
       });
+      const answer = `content says ${response.data.ragAnswer} and web says ${response.data.mcpAnswer}`;
       handleResp(question, response.data);
       if (isChatModeOn) {
-        talk(response.data);
+        talk(answer);
       }
     } catch (error) {
       console.error(`Error: ${error}`);
