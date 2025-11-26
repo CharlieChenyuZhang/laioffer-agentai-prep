@@ -1,14 +1,15 @@
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import { OpenAIEmbeddings } from "langchain/embeddings/openai";
-import { MemoryVectorStore } from "langchain/vectorstores/memory";
-import { RetrievalQAChain } from "langchain/chains";
-import { ChatOpenAI } from "langchain/chat_models/openai";
-import { PromptTemplate } from "langchain/prompts";
-
-import { PDFLoader } from "langchain/document_loaders/fs/pdf";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+import { OpenAIEmbeddings } from "@langchain/openai";
+import { MemoryVectorStore } from "@langchain/classic/vectorstores/memory";
+import { ChatOpenAI } from "@langchain/openai";
+import { PromptTemplate } from "@langchain/core/prompts";
+import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 
 // NOTE: change this default filePath to any of your default file name
 const chat = async (filePath = "./uploads/hbs-lean-startup.pdf", query) => {
+  // Get API key from environment
+  const apiKey = process.env.OPENAI_API_KEY;
+
   // step 1:
   const loader = new PDFLoader(filePath);
 
@@ -24,9 +25,7 @@ const chat = async (filePath = "./uploads/hbs-lean-startup.pdf", query) => {
 
   // step 3
 
-  const embeddings = new OpenAIEmbeddings({
-    openAIApiKey: process.env.REACT_APP_OPENAI_API_KEY,
-  });
+  const embeddings = new OpenAIEmbeddings(apiKey ? { apiKey } : {});
 
   const vectorStore = await MemoryVectorStore.fromDocuments(
     splitDocs,
@@ -39,10 +38,10 @@ const chat = async (filePath = "./uploads/hbs-lean-startup.pdf", query) => {
   // "What is task decomposition?"
   // );
 
-  // step 5: qa w/ customzie the prompt
+  // step 5: qa w/ customize the prompt
   const model = new ChatOpenAI({
-    modelName: "gpt-5",
-    openAIApiKey: process.env.REACT_APP_OPENAI_API_KEY,
+    model: "gpt-5",
+    ...(apiKey && { apiKey }),
   });
 
   const template = `Use the following pieces of context to answer the question at the end.
@@ -53,16 +52,25 @@ Use three sentences maximum and keep the answer as concise as possible.
 Question: {question}
 Helpful Answer:`;
 
-  const chain = RetrievalQAChain.fromLLM(model, vectorStore.asRetriever(), {
-    prompt: PromptTemplate.fromTemplate(template),
-    // returnSourceDocuments: true,
+  const prompt = PromptTemplate.fromTemplate(template);
+
+  // Use retriever to get relevant documents
+  const retriever = vectorStore.asRetriever();
+  const relevantDocs = await retriever.invoke(query);
+
+  // Format context from retrieved documents
+  const context = relevantDocs.map((doc) => doc.pageContent).join("\n\n");
+
+  // Create a simple chain using the prompt template
+  const formattedPrompt = await prompt.format({
+    context,
+    question: query,
   });
 
-  const response = await chain.call({
-    query,
-  });
+  // Get response from the model
+  const response = await model.invoke(formattedPrompt);
 
-  return response;
+  return { text: response.content };
 };
 
 export default chat;
